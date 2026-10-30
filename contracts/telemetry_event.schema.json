@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ztsp.local/contracts/telemetry_event.schema.json",
+  "title": "TelemetryEvent",
+  "description": "Schema for telemetry events produced by M1 (Identity & Context Engine) and consumed by M5 (ML Risk-Scoring) and M4 (Vulnerability & Posture). Version 1.0 – frozen for Phase 1.",
+  "type": "object",
+  "required": ["session_id", "user_id", "device_id", "timestamp", "event_type", "source_ip"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Contract schema version. Must equal '1.0' for this revision."
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for the user session (UUID recommended)."
+    },
+    "user_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Authenticated user identifier (username or sub claim)."
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique device/endpoint identifier."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of the event (e.g. 2024-01-01T00:00:00+00:00)."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "login",
+        "access_request",
+        "file_access",
+        "lateral_move_attempt",
+        "auth_failure",
+        "logout",
+        "privilege_escalation_attempt"
+      ],
+      "description": "Semantic classification of the telemetry event."
+    },
+    "source_ip": {
+      "type": "string",
+      "description": "Source IP address of the request (IPv4 or IPv6 string)."
+    },
+    "geo": {
+      "type": "object",
+      "description": "Geolocation context derived from source_ip via MaxMind GeoLite2 or equivalent.",
+      "additionalProperties": false,
+      "properties": {
+        "country": { "type": "string", "description": "ISO 3166-1 alpha-2 country code." },
+        "city":    { "type": "string" },
+        "lat":     { "type": "number", "minimum": -90,  "maximum": 90 },
+        "lon":     { "type": "number", "minimum": -180, "maximum": 180 }
+      }
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "HTTP User-Agent string, if applicable."
+    },
+    "raw_features": {
+      "type": "object",
+      "description": "Arbitrary numeric/string feature bag for ML consumption. Keys are feature names; values must be numbers or strings.",
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,0 +1,88 @@
+name: ztsp
+
+networks:
+  zt-net:
+    driver: bridge
+    name: zt-net
+
+services:
+
+  m1_identity:
+    build:
+      context: ./m1_identity
+    container_name: ztsp_m1_identity
+    ports:
+      - "8001:8001"
+    networks:
+      - zt-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  m2_policy:
+    build:
+      context: ./m2_policy
+    container_name: ztsp_m2_policy
+    ports:
+      - "8002:8002"
+    networks:
+      - zt-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8002/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  m3_response:
+    build:
+      context: ./m3_response
+    container_name: ztsp_m3_response
+    ports:
+      - "8003:8003"
+    networks:
+      - zt-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  m4_posture:
+    build:
+      context: ./m4_posture
+    container_name: ztsp_m4_posture
+    ports:
+      - "8004:8004"
+    networks:
+      - zt-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8004/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  m5_ml:
+    build:
+      context: ./m5_ml
+    container_name: ztsp_m5_ml
+    ports:
+      - "8005:8005"
+    networks:
+      - zt-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8005/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

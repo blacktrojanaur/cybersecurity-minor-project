@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ztsp.local/contracts/response_action.schema.json",
+  "title": "ResponseAction",
+  "description": "Schema for automated response actions triggered and reported by M3 (Automated Incident Response / SOAR-lite), consumed by M1 and M2 for session state updates. Version 1.0 – frozen for Phase 1.",
+  "type": "object",
+  "required": ["session_id", "timestamp", "action_type", "trigger_reason", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Contract schema version."
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Session identifier this action applies to."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this action was initiated."
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "terminate_session",
+        "require_mfa",
+        "restrict_access",
+        "alert_soc",
+        "block_ip",
+        "notify_user"
+      ],
+      "description": "Type of automated response action executed."
+    },
+    "trigger_reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Audit-log-ready description of what triggered this action (references policy_decision.reason)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "executed", "failed"],
+      "description": "Current execution status of the action."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional action-specific payload (e.g. alert ticket ID, MFA challenge reference)."
+    }
+  }
+}

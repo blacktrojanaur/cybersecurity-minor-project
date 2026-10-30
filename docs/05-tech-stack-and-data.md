@@ -1,0 +1,153 @@
+# 05 – Technology Stack and Data Plan
+
+**Project**: AI-Augmented Zero Trust Security Orchestration Platform
+**Phase**: 1 – Research, Requirements & Design
+
+---
+
+## 1. Stack Justification
+
+### Python 3.11
+
+**Choice rationale**:
+- Native `match` statements and improved error messages aid readability.
+- Excellent ecosystem for both web services (FastAPI) and ML (scikit-learn, PyTorch).
+- Universal team familiarity; fastest path to a working prototype.
+- `from __future__ import annotations` not required for `X | Y` union types in 3.10+.
+
+**Alternative considered**: Go (better raw performance, but no ML ecosystem; higher learning curve for the team).
+
+### FastAPI
+
+**Choice rationale**:
+- Automatic OpenAPI/Swagger UI generation from Pydantic models — critical for a contract-first project.
+- Pydantic V2 schema validation is fast and type-safe; Pydantic models *are* the schema, reducing drift risk.
+- Async-capable (ASGI) for future latency-critical paths; synchronous stubs work equally well.
+- Uvicorn ASGI server is lightweight enough to run 5 instances on a laptop.
+
+**Alternative considered**: Flask (synchronous, no built-in OpenAPI, more boilerplate).
+
+### Pydantic (v2.7+)
+
+**Choice rationale**:
+- Tight FastAPI integration: request bodies and responses are validated automatically.
+- Pydantic model → JSON Schema export allows `contracts/*.schema.json` and Pydantic models to stay in sync.
+- V2 uses a Rust core for 5–50× faster validation vs V1.
+
+### scikit-learn (Isolation Forest baseline, M5)
+
+**Choice rationale**:
+- `IsolationForest` is the canonical unsupervised anomaly detection algorithm for tabular behavioural data.
+- Requires no labelled training data — appropriate for bootstrapping without real incident data.
+- Deterministic output given a fixed `random_state` — reproducible experiments.
+- Lightweight: fits comfortably in memory; no GPU required.
+
+**Planned addition (Phase 2)**: A simple autoencoder in PyTorch as a comparison model.
+
+**Alternative considered**: One-Class SVM (slower on high-dimensional sparse data; less interpretable).
+
+### Docker Compose
+
+**Choice rationale**:
+- Single `docker compose up` starts all five services with no host Python environment requirements.
+- `zt-net` bridge isolates inter-module traffic from the host network, mimicking a production micro-segmented network.
+- Health checks allow `make test` to wait for all stubs to be ready before running pytest.
+- Runs on Windows (Docker Desktop), macOS, and Linux — all team members can run it.
+
+**Alternative considered**: Kubernetes (overkill for a 5-service laptop prototype; `kubectl` complexity adds nothing here).
+
+---
+
+## 2. Candidate Public Datasets for M5 Training
+
+> **Disclaimer**: Dataset characteristics below are described from published documentation and
+> general community knowledge. Actual file sizes, feature counts, and label distributions
+> **must be verified** by the team before use.
+> [TO VERIFY – search for each dataset name below on its official source.]
+
+### DS1 – UNSW-NB15
+
+| Property | Value |
+|---|---|
+| Source | University of New South Wales, Canberra |
+| URL | https://research.unsw.edu.au/projects/unsw-nb15-dataset |
+| Type | Network intrusion detection |
+| Size | ~2.5 million records (49 features) |
+| Labels | 9 attack categories + normal |
+| Relevance to ZTSP | Lateral movement, reconnaissance, credential-related flows |
+| Known limitations | Network-layer features only; no application-layer session context; class imbalance; synthetic generation may not reflect modern attack tooling |
+
+### DS2 – KDD Cup 1999 / NSL-KDD
+
+| Property | Value |
+|---|---|
+| Source | UCI ML Repository (NSL-KDD is a de-duplicated version) |
+| URL | https://www.unb.ca/cic/datasets/nsl.html |
+| Type | Network intrusion detection |
+| Size | ~125,000 records (41 features) |
+| Labels | DoS, Probe, R2L, U2R, Normal |
+| Relevance to ZTSP | Privilege escalation (U2R), remote-to-local (R2L) map to threat scenarios S3/S1 |
+| Known limitations | Data is from 1998; feature distributions do not reflect modern protocols (HTTPS, gRPC). Widely criticised for unrealistic class distributions. Use only as a sanity-check baseline. |
+
+### DS3 – CERT Insider Threat Dataset (Synthetic)
+
+| Property | Value |
+|---|---|
+| Source | Carnegie Mellon University / CERT Division |
+| URL | https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=508099 |
+| Type | User activity (email, web, file, logon/logoff) |
+| Size | Multiple scenarios; r4.2 has ~32 million records |
+| Labels | Insider threat events (malicious, oblivious, exploited) |
+| Relevance to ZTSP | Directly maps to M5 behavioural baseline; off-hours access, data exfiltration patterns |
+| Known limitations | Requires registration to download. Synthetic generation means real attacker subtlety may be underrepresented. Contains U.S.-centric patterns. |
+
+### DS4 – Synthetic Telemetry (Generated In-Project)
+
+| Property | Value |
+|---|---|
+| Source | Generated by the team using the testbed |
+| Location | /testbed/ (Phase 2) |
+| Type | TelemetryEvent + PostureScore tuples |
+| Size | Target: 100,000 events across 1,000 simulated sessions |
+| Labels | Ground-truth attack/normal labels injected during generation |
+| Relevance | Perfectly matches our contract schemas — no feature engineering needed |
+| Known limitations | Synthetic data may not capture real-world distribution shifts. Attacker behaviour is deterministic (not adversarial). |
+
+---
+
+## 3. Synthetic Telemetry Generation Plan
+
+**Goal**: Produce a labelled dataset of `TelemetryEvent + PostureScore` pairs for M5 training and evaluation before real data is available.
+
+**Approach**:
+
+```
+1. Normal session generator
+   - Random user from a pool of 20 simulated users
+   - Work-hours access (08:00–18:00 local time, ± 30 min jitter)
+   - Known device_id from a per-user registered device list
+   - Geo: consistent country; occasional travel (1% probability)
+   - raw_features: bytes_sent, session_duration sampled from LogNormal distributions
+   - Label: normal
+
+2. Attack scenario injector (one per scenario S1–S4)
+   - S1 (credential misuse): unknown device + anomalous geo → label: attack
+   - S2 (lateral movement): distinct_resources_accessed > 10 within 5 min → label: attack
+   - S3 (privilege escalation): privilege_claim_mismatch = True → label: attack
+   - S4 (slow-and-low): progressive off-hours drift over N sessions → label: attack (late)
+
+3. Mix ratio: 95% normal, 5% attack (reflecting real-world base rate assumption)
+
+4. Output format: NDJSON files, one TelemetryEvent per line, with an additional
+   `ground_truth_label` field stripped before feeding to M5, retained for evaluation.
+```
+
+**Limitations of synthetic data**:
+- Attack patterns are rule-based and deterministic; a real adversary is adaptive.
+- Normal behaviour distribution is modelled with simple statistical distributions; real users have complex, correlated patterns.
+- Results on synthetic data will likely overestimate real-world detection accuracy.
+- The team must validate the model on DS1 or DS3 features before claiming generalisation.
+
+---
+
+*Document owner: M5 lead (ML). Review with M1 lead (data pipeline) before Phase 2.*

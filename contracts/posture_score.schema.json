@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ztsp.local/contracts/posture_score.schema.json",
+  "title": "PostureScore",
+  "description": "Schema for device posture and vulnerability data produced by M4 (Vulnerability & Posture Integration) and consumed by M5 (ML Risk-Scoring) and M2 (Policy Enforcement). Version 1.0 – frozen for Phase 1.",
+  "type": "object",
+  "required": [
+    "device_id", "timestamp", "patch_level", "vuln_count",
+    "critical_vuln_count", "os_compliant", "antivirus_active", "posture_score"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Contract schema version."
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique device/endpoint identifier matching TelemetryEvent.device_id."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of the most recent posture assessment."
+    },
+    "patch_level": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Fraction of required OS and application patches applied. 1.0 = fully patched."
+    },
+    "vuln_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total count of known CVEs/vulnerabilities detected on the device."
+    },
+    "critical_vuln_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Count of CVSS score 9.0+ (Critical) vulnerabilities. Non-zero immediately escalates policy."
+    },
+    "os_compliant": {
+      "type": "boolean",
+      "description": "True if the device OS version meets the minimum compliance baseline."
+    },
+    "antivirus_active": {
+      "type": "boolean",
+      "description": "True if an approved AV/EDR solution is running and up to date."
+    },
+    "posture_score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Composite device posture score. 1.0 = fully compliant; 0.0 = non-compliant."
+    }
+  }
+}

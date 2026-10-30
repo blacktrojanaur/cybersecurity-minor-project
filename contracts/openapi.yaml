@@ -1,0 +1,483 @@
+openapi: "3.0.3"
+
+info:
+  title: AI-Augmented Zero Trust Security Orchestration Platform – Service API
+  description: |
+    **Frozen interface specification v1.0** for inter-module communication.
+
+    Five FastAPI microservices (M1–M5) each expose REST endpoints documented here.
+    Every module listens on a dedicated port on the shared `zt-net` Docker network.
+
+    **Change governance**: Any modification requires team approval.
+    See `contracts/CHANGELOG.md` for versioning rules.
+  version: "1.0.0"
+  contact:
+    name: ZTSP Team (B.Tech Final Year Project)
+
+servers:
+  - url: http://localhost:8001
+    description: M1 – Identity & Context Engine
+  - url: http://localhost:8002
+    description: M2 – Policy Enforcement & Micro-segmentation
+  - url: http://localhost:8003
+    description: M3 – Automated Incident Response (SOAR-lite)
+  - url: http://localhost:8004
+    description: M4 – Vulnerability & Posture Integration
+  - url: http://localhost:8005
+    description: M5 – ML Risk-Scoring Engine
+
+tags:
+  - name: M1 - Identity & Context
+    description: Session telemetry ingestion and context enrichment
+  - name: M2 - Policy Enforcement
+    description: Per-session policy evaluation and micro-segmentation decisions
+  - name: M3 - Automated Response
+    description: SOAR-lite automated incident response actions
+  - name: M4 - Posture & Vulnerability
+    description: Device posture assessment and vulnerability data
+  - name: M5 - ML Risk Scoring
+    description: Behavioural anomaly detection and continuous risk scoring
+  - name: Health
+    description: Health check endpoints (all modules)
+
+paths:
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # M1 – Identity & Context Engine (port 8001)
+  # ═══════════════════════════════════════════════════════════════════════
+
+  /telemetry/events:
+    post:
+      tags: [M1 - Identity & Context]
+      summary: Ingest a telemetry event
+      description: |
+        M1 receives session telemetry from the access proxy.
+        On receipt it enriches the event (geo, device context) and
+        forwards to M5 /score and M4 /posture/{device_id}.
+      operationId: m1_ingestTelemetryEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetryEvent'
+            example:
+              schema_version: "1.0"
+              session_id: "sess-abc-123"
+              user_id: "alice@example.com"
+              device_id: "dev-laptop-01"
+              timestamp: "2024-06-01T09:00:00+00:00"
+              event_type: "access_request"
+              source_ip: "10.0.0.5"
+              geo: {country: "IN", city: "Bengaluru", lat: 12.97, lon: 77.59}
+              user_agent: "Mozilla/5.0"
+              raw_features: {bytes_sent: 512, session_duration: 120}
+      responses:
+        '202':
+          description: Event accepted for processing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, example: accepted}
+                  session_id: {type: string}
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /session/{session_id}:
+    get:
+      tags: [M1 - Identity & Context]
+      summary: Get enriched session context
+      description: Returns the latest enriched telemetry context for a session.
+      operationId: m1_getSessionContext
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: {type: string}
+          example: sess-abc-123
+      responses:
+        '200':
+          description: Enriched session context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryEvent'
+        '404':
+          description: Session not found
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # M2 – Policy Enforcement & Micro-segmentation (port 8002)
+  # ═══════════════════════════════════════════════════════════════════════
+
+  /policy/evaluate:
+    post:
+      tags: [M2 - Policy Enforcement]
+      summary: Evaluate policy for a session
+      description: |
+        Takes the session's current risk_score (from M5) and posture_score (from M4)
+        and returns a binding policy decision.
+        The decision TTL drives the continuous re-evaluation loop.
+      operationId: m2_evaluatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id, risk_score, posture_score]
+              properties:
+                session_id:
+                  type: string
+                  example: sess-abc-123
+                risk_score:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                  description: Latest score from M5
+                  example: 0.23
+                posture_score:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                  description: Latest composite posture score from M4
+                  example: 0.78
+      responses:
+        '200':
+          description: Policy decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyDecision'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /policy/{session_id}:
+    get:
+      tags: [M2 - Policy Enforcement]
+      summary: Get current policy decision for a session
+      operationId: m2_getPolicy
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Current policy decision (may be expired – check timestamp + ttl_seconds)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyDecision'
+        '404':
+          description: No decision found for this session
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # M3 – Automated Incident Response / SOAR-lite (port 8003)
+  # ═══════════════════════════════════════════════════════════════════════
+
+  /response/trigger:
+    post:
+      tags: [M3 - Automated Response]
+      summary: Trigger an automated response action
+      description: |
+        Called by M2 (or M1 on TTL expiry) when the policy decision is
+        `step_up`, `restrict`, or `deny`.
+        M3 selects the appropriate action and executes it.
+      operationId: m3_triggerResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id, decision, reason]
+              properties:
+                session_id:
+                  type: string
+                decision:
+                  type: string
+                  enum: [step_up, restrict, deny]
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Response action triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseAction'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /response/{session_id}:
+    get:
+      tags: [M3 - Automated Response]
+      summary: Get all response actions taken for a session
+      operationId: m3_getResponseActions
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: List of response actions (chronological order)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResponseAction'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # M4 – Vulnerability & Posture Integration (port 8004)
+  # ═══════════════════════════════════════════════════════════════════════
+
+  /posture/{device_id}:
+    get:
+      tags: [M4 - Posture & Vulnerability]
+      summary: Get posture score for a device
+      description: Returns the latest assessed posture for a device. Cached; call /posture/scan to refresh.
+      operationId: m4_getPostureScore
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Latest device posture score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostureScore'
+        '404':
+          description: Device not registered
+
+  /posture/scan:
+    post:
+      tags: [M4 - Posture & Vulnerability]
+      summary: Trigger an on-demand posture scan
+      description: Queues an asynchronous posture re-assessment for a device.
+      operationId: m4_triggerScan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_id]
+              properties:
+                device_id:
+                  type: string
+      responses:
+        '202':
+          description: Scan queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, example: scan_queued}
+                  device_id: {type: string}
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # M5 – ML Risk-Scoring Engine (port 8005)
+  # ═══════════════════════════════════════════════════════════════════════
+
+  /score:
+    post:
+      tags: [M5 - ML Risk Scoring]
+      summary: Compute a risk score for a session
+      description: |
+        Accepts a TelemetryEvent and optionally a PostureScore.
+        Returns a continuous risk score [0, 1] with feature attributions.
+
+        **Phase 1 stub**: returns deterministic score = 0.2300 so no downstream module is blocked.
+        **Phase 2**: replace stub with Isolation Forest / autoencoder baseline trained on dataset.
+      operationId: m5_computeRiskScore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id, telemetry_event]
+              properties:
+                session_id:
+                  type: string
+                telemetry_event:
+                  $ref: '#/components/schemas/TelemetryEvent'
+                posture_score:
+                  $ref: '#/components/schemas/PostureScore'
+      responses:
+        '200':
+          description: Risk score with feature attributions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskScore'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /score/{session_id}:
+    get:
+      tags: [M5 - ML Risk Scoring]
+      summary: Get the latest cached risk score for a session
+      operationId: m5_getLatestRiskScore
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Cached risk score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskScore'
+        '404':
+          description: No score found for this session
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Health (all modules)
+  # ═══════════════════════════════════════════════════════════════════════
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Available on **all five modules**. Returns module name and stub version.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, module, version]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  module:
+                    type: string
+                    example: m1_identity
+                  version:
+                    type: string
+                    example: 1.0.0-stub
+
+components:
+  schemas:
+
+    TelemetryEvent:
+      type: object
+      required: [session_id, user_id, device_id, timestamp, event_type, source_ip]
+      properties:
+        schema_version:   {type: string, example: "1.0"}
+        session_id:       {type: string}
+        user_id:          {type: string}
+        device_id:        {type: string}
+        timestamp:        {type: string, format: date-time}
+        event_type:
+          type: string
+          enum: [login, access_request, file_access, lateral_move_attempt, auth_failure, logout, privilege_escalation_attempt]
+        source_ip:        {type: string}
+        geo:
+          type: object
+          properties:
+            country: {type: string}
+            city:    {type: string}
+            lat:     {type: number}
+            lon:     {type: number}
+        user_agent:   {type: string}
+        raw_features:
+          type: object
+          additionalProperties: true
+
+    RiskScore:
+      type: object
+      required: [session_id, timestamp, score, confidence, top_features, model_version]
+      properties:
+        schema_version:  {type: string}
+        session_id:      {type: string}
+        timestamp:       {type: string, format: date-time}
+        score:           {type: number, minimum: 0.0, maximum: 1.0}
+        confidence:      {type: number, minimum: 0.0, maximum: 1.0}
+        top_features:
+          type: array
+          items:
+            type: object
+            properties:
+              name:         {type: string}
+              contribution: {type: number}
+        model_version:   {type: string}
+
+    PostureScore:
+      type: object
+      required: [device_id, timestamp, patch_level, vuln_count, critical_vuln_count, os_compliant, antivirus_active, posture_score]
+      properties:
+        schema_version:       {type: string}
+        device_id:            {type: string}
+        timestamp:            {type: string, format: date-time}
+        patch_level:          {type: number, minimum: 0.0, maximum: 1.0}
+        vuln_count:           {type: integer, minimum: 0}
+        critical_vuln_count:  {type: integer, minimum: 0}
+        os_compliant:         {type: boolean}
+        antivirus_active:     {type: boolean}
+        posture_score:        {type: number, minimum: 0.0, maximum: 1.0}
+
+    PolicyDecision:
+      type: object
+      required: [session_id, timestamp, decision, reason, ttl_seconds]
+      properties:
+        schema_version:  {type: string}
+        session_id:      {type: string}
+        timestamp:       {type: string, format: date-time}
+        decision:
+          type: string
+          enum: [allow, step_up, restrict, deny]
+        reason:          {type: string}
+        ttl_seconds:     {type: integer, minimum: 30, maximum: 3600}
+        applied_policies:
+          type: array
+          items: {type: string}
+
+    ResponseAction:
+      type: object
+      required: [session_id, timestamp, action_type, trigger_reason, status]
+      properties:
+        schema_version:  {type: string}
+        session_id:      {type: string}
+        timestamp:       {type: string, format: date-time}
+        action_type:
+          type: string
+          enum: [terminate_session, require_mfa, restrict_access, alert_soc, block_ip, notify_user]
+        trigger_reason:  {type: string}
+        status:
+          type: string
+          enum: [pending, executed, failed]
+        metadata:
+          type: object
+          additionalProperties: true
+
+  responses:
+    ValidationError:
+      description: Request body failed schema validation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    loc:  {type: array, items: {type: string}}
+                    msg:  {type: string}
+                    type: {type: string}
