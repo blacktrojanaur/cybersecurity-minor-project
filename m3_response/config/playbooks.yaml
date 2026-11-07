@@ -1,0 +1,48 @@
+# ZTSP SOAR-lite Playbooks — version 1.0
+# Each playbook maps a trigger decision to an ordered sequence of actions.
+
+playbook_version: "1.0"
+
+playbooks:
+  - id: "pb-step-up-mfa"
+    name: "Step-Up MFA Challenge"
+    trigger_decisions: ["step_up"]
+    require_human_approval: false
+    actions:
+      - type: "require_mfa"
+        description: "Dispatch MFA challenge to user"
+        timeout_seconds: 120
+      - type: "notify_user"
+        description: "Notify user of elevated security check"
+
+  - id: "pb-restrict-segment"
+    name: "Restrict to Safe Segment"
+    trigger_decisions: ["restrict"]
+    require_human_approval: false
+    actions:
+      - type: "restrict_access"
+        description: "Enforce read-only access, block cross-segment movement"
+      - type: "alert_soc"
+        description: "Notify SOC of restricted session"
+
+  - id: "pb-terminate-and-alert"
+    name: "Terminate Session and Alert SOC"
+    trigger_decisions: ["deny"]
+    require_human_approval: false
+    actions:
+      - type: "terminate_session"
+        description: "Revoke session token via M1"
+      - type: "alert_soc"
+        description: "Create SOC incident record"
+      - type: "notify_user"
+        description: "Notify user account security team"
+
+  - id: "pb-quarantine-device"
+    name: "Logical Device Quarantine"
+    trigger_decisions: ["deny"]
+    require_human_approval: true   # destructive — needs analyst approval
+    actions:
+      - type: "block_ip"
+        description: "Block source IP at network perimeter"
+      - type: "alert_soc"
+        description: "Open quarantine incident"

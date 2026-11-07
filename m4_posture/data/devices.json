@@ -1,0 +1,21 @@
+{
+  "devices": [
+    {"device_id": "dev-alice-laptop",    "owner": "alice",  "os": "Windows 11",   "os_patch_age_days": 5,  "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 0},
+    {"device_id": "dev-alice-desktop",   "owner": "alice",  "os": "Windows 11",   "os_patch_age_days": 12, "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 1},
+    {"device_id": "dev-bob-laptop",      "owner": "bob",    "os": "macOS 14",     "os_patch_age_days": 3,  "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 0},
+    {"device_id": "dev-carol-laptop",    "owner": "carol",  "os": "Windows 10",   "os_patch_age_days": 45, "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 3},
+    {"device_id": "dev-carol-phone",     "owner": "carol",  "os": "Android 14",   "os_patch_age_days": 7,  "disk_encrypted": true,  "av_active": false, "mfa_enrolled": true,  "known_vulns": 0},
+    {"device_id": "dev-dave-workstation","owner": "dave",   "os": "Ubuntu 22.04", "os_patch_age_days": 1,  "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 0},
+    {"device_id": "dev-dave-laptop",     "owner": "dave",   "os": "Ubuntu 22.04", "os_patch_age_days": 8,  "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 0},
+    {"device_id": "dev-eve-laptop",      "owner": "eve",    "os": "Windows 10",   "os_patch_age_days": 90, "disk_encrypted": false, "av_active": true,  "mfa_enrolled": false, "known_vulns": 5},
+    {"device_id": "dev-frank-laptop",    "owner": "frank",  "os": "macOS 14",     "os_patch_age_days": 2,  "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 0},
+    {"device_id": "dev-frank-desktop",   "owner": "frank",  "os": "Ubuntu 22.04", "os_patch_age_days": 4,  "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 1},
+    {"device_id": "dev-grace-laptop",    "owner": "grace",  "os": "macOS 13",     "os_patch_age_days": 20, "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 2},
+    {"device_id": "dev-henry-laptop",    "owner": "henry",  "os": "Windows 11",   "os_patch_age_days": 10, "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": false, "known_vulns": 1},
+    {"device_id": "dev-iris-laptop",     "owner": "iris",   "os": "macOS 14",     "os_patch_age_days": 6,  "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 0},
+    {"device_id": "dev-jack-laptop",     "owner": "jack",   "os": "Windows 11",   "os_patch_age_days": 14, "disk_encrypted": true,  "av_active": true,  "mfa_enrolled": true,  "known_vulns": 1},
+    {"device_id": "dev-jack-phone",      "owner": "jack",   "os": "iOS 17",       "os_patch_age_days": 5,  "disk_encrypted": true,  "av_active": false, "mfa_enrolled": true,  "known_vulns": 0},
+    {"device_id": "dev-compromised-01",  "owner": "unknown","os": "Windows 7",    "os_patch_age_days": 1825,"disk_encrypted": false,"av_active": false, "mfa_enrolled": false, "known_vulns": 12},
+    {"device_id": "dev-unknown-attacker","owner": "unknown","os": "Unknown",      "os_patch_age_days": 999,"disk_encrypted": false, "av_active": false, "mfa_enrolled": false, "known_vulns": 50}
+  ]
+}

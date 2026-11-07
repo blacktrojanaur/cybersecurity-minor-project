@@ -1,0 +1,109 @@
+{
+  "evaluation_timestamp": "2026-11-06T19:17:58Z",
+  "seed": 42,
+  "dataset": {
+    "total_samples": 10314,
+    "normal_samples": 8781,
+    "attack_samples": 1533
+  },
+  "models": {
+    "ensemble": {
+      "accuracy": 0.9857,
+      "precision": 0.9184,
+      "recall_tpr": 0.9915,
+      "fpr": 0.0154,
+      "f1_score": 0.9536,
+      "roc_auc": 0.9994,
+      "confusion_matrix": {
+        "TN": 8646,
+        "FP": 135,
+        "FN": 13,
+        "TP": 1520
+      },
+      "mean_latency_ms": 0.0
+    },
+    "isolation_forest_ablation": {
+      "accuracy": 0.8495,
+      "precision": 0.496,
+      "recall_tpr": 0.7736,
+      "fpr": 0.1372,
+      "f1_score": 0.6045,
+      "roc_auc": 0.8544,
+      "confusion_matrix": {
+        "TN": 7576,
+        "FP": 1205,
+        "FN": 347,
+        "TP": 1186
+      },
+      "mean_latency_ms": 0.025
+    },
+    "random_forest_ablation": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall_tpr": 1.0,
+      "fpr": 0.0,
+      "f1_score": 1.0,
+      "roc_auc": 1.0,
+      "confusion_matrix": {
+        "TN": 8781,
+        "FP": 0,
+        "FN": 0,
+        "TP": 1533
+      },
+      "mean_latency_ms": 0.014
+    },
+    "static_rbac_baseline": {
+      "accuracy": 0.8514,
+      "precision": 0.0,
+      "recall_tpr": 0.0,
+      "fpr": 0.0,
+      "f1_score": 0.0,
+      "roc_auc": 0.5,
+      "confusion_matrix": {
+        "TN": 8781,
+        "FP": 0,
+        "FN": 1533,
+        "TP": 0
+      },
+      "mean_latency_ms": 0.05
+    }
+  },
+  "scenario_detection": {
+    "attack_credential_misuse": {
+      "total": 200,
+      "detected": 200,
+      "detection_rate": 1.0
+    },
+    "attack_lateral_movement": {
+      "total": 1152,
+      "detected": 1152,
+      "detection_rate": 1.0
+    },
+    "attack_privilege_escalation": {
+      "total": 100,
+      "detected": 87,
+      "detection_rate": 0.87
+    },
+    "attack_slow_and_low": {
+      "total": 81,
+      "detected": 81,
+      "detection_rate": 1.0
+    },
+    "normal": {
+      "total": 8781,
+      "detected": 135,
+      "detection_rate": 0.0154
+    }
+  },
+  "multi_seed_stability": {
+    "seeds_tested": [
+      42,
+      123,
+      999
+    ],
+    "f1_mean": 0.9536,
+    "f1_std": 0.0,
+    "fpr_mean": 0.0154,
+    "fpr_std": 0.0
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "summary": [
+    {
+      "Scenario": "S1 Credential Misuse",
+      "Zero Trust Decision": "deny",
+      "Zero Trust Blocked?": "YES \u2713",
+      "RBAC Baseline Blocked?": "NO (Breach) \u2717"
+    },
+    {
+      "Scenario": "S2 Lateral Movement",
+      "Zero Trust Decision": "restrict",
+      "Zero Trust Blocked?": "YES \u2713",
+      "RBAC Baseline Blocked?": "NO (Blind) \u2717"
+    },
+    {
+      "Scenario": "S3 Privilege Escalation",
+      "Zero Trust Decision": "deny",
+      "Zero Trust Blocked?": "NO \u2717",
+      "RBAC Baseline Blocked?": "NO (Session Active) \u2717"
+    },
+    {
+      "Scenario": "S4 Slow-and-Low Drift",
+      "Zero Trust Decision": "step_up",
+      "Zero Trust Blocked?": "YES (Step-up MFA) \u2713",
+      "RBAC Baseline Blocked?": "NO (No baseline) \u2717"
+    }
+  ],
+  "s1": {
+    "scenario": "S1_credential_misuse",
+    "zt_detected": true,
+    "zt_decision": "deny",
+    "zt_blocked": true,
+    "rbac_detected": false,
+    "rbac_blocked": false
+  },
+  "s2": {
+    "scenario": "S2_lateral_movement",
+    "zt_detected": true,
+    "zt_decision": "restrict",
+    "zt_blocked": true,
+    "rbac_detected": false,
+    "rbac_blocked": false
+  },
+  "s3": {
+    "scenario": "S3_privilege_escalation",
+    "zt_detected": false,
+    "zt_decision": "deny",
+    "zt_blocked": false,
+    "session_revoked": false,
+    "rbac_detected": false,
+    "rbac_session_revoked": false
+  },
+  "s4": {
+    "scenario": "S4_slow_and_low",
+    "zt_detected": true,
+    "zt_decision": "step_up",
+    "step_up_triggered": true,
+    "rbac_detected": false
+  }
+}

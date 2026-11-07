@@ -1,119 +1,176 @@
 """
 M5 – ML Risk-Scoring Engine  (port 8005)
 =========================================
-Phase 1 stub: returns a DETERMINISTIC mock risk score (0.2300) so that
-M2, M3, and M1 are never blocked waiting for a real model.
-
-All responses validate against contracts/risk_score.schema.json.
-
-Phase 2 responsibilities (NOT implemented here):
-- Train Isolation Forest on synthetic + real telemetry dataset
-- Implement autoencoder baseline for comparison
-- SHAP-based feature attributions for top_features
-- Model versioning and hot-swap without service restart
-- Feedback loop: receive ground-truth labels from M3 (confirmed incidents)
-  to trigger periodic re-training
-- A/B testing harness for model comparison
+Phase 2: Real Isolation Forest + Random Forest ensemble with SHAP explainability.
+Replaces the Phase 1 stub entirely while keeping all existing endpoints compatible.
 """
+
+import sys
+import threading
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+from common.logging_utils import get_logger
+from common.auth import require_service_token
+
+from m5_ml.scorer import get_scorer
+from m5_ml.feedback_store import record_feedback, load_feedback
+from m5_ml.trainer import train, MODELS_DIR
+
+log = get_logger(__name__)
 
 app = FastAPI(
     title="M5 – ML Risk-Scoring Engine",
     description=(
         "Behavioural anomaly detection producing a continuous risk score [0, 1]. "
-        "Phase 1 stub returns deterministic score=0.2300. "
-        "Phase 2 replaces this with Isolation Forest / autoencoder."
+        "Phase 2: Isolation Forest + Random Forest ensemble with SHAP attributions."
     ),
-    version="1.0.0-stub",
+    version="2.0.0",
 )
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# ── Constants ─────────────────────────────────────────────────────────────────
-
-STUB_SCORE: float = 0.2300          # Deterministic value – do not change until Phase 2
-STUB_CONFIDENCE: float = 0.8700
-STUB_MODEL_VERSION: str = "stub-v1.0"
-
-# ── Pydantic models (mirror contracts/risk_score.schema.json) ─────────────────
-
-class ScoreFeature(BaseModel):
-    """A single feature's contribution to the risk score."""
-
-    name: str
-    contribution: float
+# Score cache: session_id → last RiskScore dict
+_score_cache: dict[str, dict] = {}
+_cache_lock = threading.Lock()
 
 
-class RiskScore(BaseModel):
-    """Risk score produced by M5 and consumed by M2 and M3."""
+# ── Startup ───────────────────────────────────────────────────────────────────
 
-    schema_version: str = "1.0"
-    session_id: str
-    timestamp: str
-    score: float
-    confidence: float
-    top_features: list[ScoreFeature]
-    model_version: str
+@app.on_event("startup")
+async def startup() -> None:
+    scorer = get_scorer()
+    scorer.load()
+    if scorer.is_ready():
+        log.info("m5_startup", status="models_loaded", version=scorer.model_version)
+    else:
+        log.warning("m5_startup", status="models_not_found",
+                    hint="Run `make train` to train models before scoring.")
 
+
+# ── Pydantic request/response models ─────────────────────────────────────────
 
 class ScoreRequest(BaseModel):
-    """Request payload for POST /score."""
-
     session_id: str
     telemetry_event: dict[str, Any]
     posture_score: dict[str, Any] | None = None
 
 
-# ── Helper ────────────────────────────────────────────────────────────────────
-
-def _stub_score(session_id: str) -> RiskScore:
-    """Return the deterministic stub risk score."""
-    return RiskScore(
-        schema_version="1.0",
-        session_id=session_id,
-        timestamp=datetime.now(timezone.utc).isoformat(),
-        score=STUB_SCORE,
-        confidence=STUB_CONFIDENCE,
-        top_features=[
-            ScoreFeature(name="geo_anomaly",       contribution=0.12),
-            ScoreFeature(name="off_hours_access",  contribution=0.07),
-            ScoreFeature(name="new_device",        contribution=0.04),
-        ],
-        model_version=STUB_MODEL_VERSION,
-    )
+class FeedbackRequest(BaseModel):
+    session_id: str
+    confirmed_incident: bool
+    event_snapshot: dict[str, Any] | None = None
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @app.get("/health", tags=["Health"])
 def health_check() -> dict[str, str]:
-    """Health check – confirms the stub is running."""
-    return {"status": "ok", "module": "m5_ml", "version": "1.0.0-stub"}
+    scorer = get_scorer()
+    return {
+        "status": "ok",
+        "module": "m5_ml",
+        "version": "2.0.0",
+        "model_ready": str(scorer.is_ready()),
+        "model_version": scorer.model_version,
+    }
 
 
-@app.post("/score", response_model=RiskScore, tags=["Scoring"])
-def compute_risk_score(request: ScoreRequest) -> RiskScore:
+@app.post("/score", tags=["Scoring"])
+def compute_risk_score(
+    request: ScoreRequest,
+    _: None = Depends(require_service_token),
+) -> dict[str, Any]:
     """
-    Compute a behavioural risk score for a session.
+    Compute a risk score for a session telemetry event.
 
-    Phase 1 stub: ignores all input features and returns score=0.2300.
-    This deterministic value ensures M2 and M3 are unblocked during Phase 1.
-
-    Phase 2: run telemetry_event features + posture_score through the
-    trained Isolation Forest model and compute SHAP attributions.
+    Returns a RiskScore object conforming to contracts/risk_score.schema.json.
     """
-    return _stub_score(request.session_id)
+    scorer = get_scorer()
+    result = scorer.score(
+        session_id=request.session_id,
+        telemetry=request.telemetry_event,
+        posture=request.posture_score,
+    )
+    with _cache_lock:
+        _score_cache[request.session_id] = result
+    log.info("scored", session_id=request.session_id,
+             score=result["score"], model=result["model_version"])
+    return result
 
 
-@app.get("/score/{session_id}", response_model=RiskScore, tags=["Scoring"])
-def get_latest_score(session_id: str) -> RiskScore:
+@app.get("/score/{session_id}", tags=["Scoring"])
+def get_latest_score(
+    session_id: str,
+    _: None = Depends(require_service_token),
+) -> dict[str, Any]:
+    """Retrieve the latest cached risk score for a session."""
+    with _cache_lock:
+        cached = _score_cache.get(session_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"No score cached for session {session_id!r}.")
+    return cached
+
+
+@app.post("/feedback", tags=["Feedback"])
+def submit_feedback(
+    request: FeedbackRequest,
+    _: None = Depends(require_service_token),
+) -> dict[str, Any]:
     """
-    Retrieve the latest cached risk score for a session.
-
-    Phase 1 stub: returns the same deterministic mock score.
-    Phase 2: query the score cache (Redis / in-memory store).
+    Submit analyst-confirmed ground-truth label for a session.
+    Labels accumulate in the feedback store for periodic retraining.
+    Only confirmed labels are accepted (no automated labels).
     """
-    return _stub_score(session_id)
+    record = record_feedback(
+        session_id=request.session_id,
+        confirmed_incident=request.confirmed_incident,
+        event_snapshot=request.event_snapshot,
+    )
+    log.info("feedback_recorded", session_id=request.session_id,
+             confirmed_incident=request.confirmed_incident)
+    return {"status": "recorded", "record": record}
+
+
+@app.post("/retrain", tags=["Training"])
+def trigger_retrain(
+    _: None = Depends(require_service_token),
+) -> dict[str, Any]:
+    """
+    Trigger model retraining from the current synthetic data + feedback store.
+    Runs synchronously (laptop scale); production systems would run this async.
+    Only analyst-confirmed samples from feedback are incorporated.
+    """
+    from pathlib import Path
+    data_dir = Path("testbed/data")
+    if not data_dir.exists():
+        raise HTTPException(
+            status_code=400,
+            detail="Training data not found. Run `make train` first.",
+        )
+    try:
+        meta = train(data_dir)
+        get_scorer().load()  # hot-reload
+        log.info("retrained", model_version=meta["model_version"])
+        return {"status": "retrained", "metadata": meta}
+    except Exception as exc:
+        log.error("retrain_failed", error=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/feedback/summary", tags=["Feedback"])
+def feedback_summary(
+    _: None = Depends(require_service_token),
+) -> dict[str, Any]:
+    """Return summary statistics of the analyst feedback store."""
+    records = load_feedback()
+    attacks = sum(1 for r in records if r.get("confirmed_incident"))
+    normals = len(records) - attacks
+    return {"total": len(records), "confirmed_attacks": attacks, "confirmed_normal": normals}

@@ -1,0 +1,21 @@
+# M4 posture weights — tunable without code changes (OQ7)
+# All weights should sum to approximately 1.0 before bonuses
+
+# Core compliance weights
+patch_level: 0.40        # Fraction of patches applied × this weight
+os_compliant: 0.30       # Binary: OS version meets baseline
+antivirus_active: 0.20   # Binary: AV/EDR running and updated
+vuln_penalty: 0.10       # vuln_count / 20 * this weight (subtracted)
+
+# Bonus weights (additive, keep small)
+mfa_enrolled_bonus: 0.05
+disk_encrypted_bonus: 0.05
+
+# Hard cap when critical vulnerabilities exist (CVSS 9.0+)
+critical_vuln_cap: 0.30
+
+# Patch age penalty: reduce patch_level by this per 30 days of age
+patch_age_penalty_per_30d: 0.05
+
+# Maximum patch age before patch_level = 0
+max_patch_age_days: 365

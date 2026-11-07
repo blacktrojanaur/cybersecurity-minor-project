@@ -1,0 +1,96 @@
+# ZTSP Policy Rules — version 1.0
+# Format: priority order (lower number = evaluated first)
+# Each rule: id, description, conditions, decision, ttl_seconds, actions
+
+rule_version: "1.0"
+
+rules:
+  - id: "rule-critical-vuln"
+    description: "Deny any session with critical vulnerabilities on device"
+    priority: 1
+    conditions:
+      critical_vuln_count_gt: 0
+    decision: "deny"
+    ttl_seconds: 30
+    actions: ["terminate_session", "alert_soc"]
+
+  - id: "rule-privilege-escalation"
+    description: "Deny privilege escalation attempts immediately"
+    priority: 2
+    conditions:
+      event_type_eq: "privilege_escalation_attempt"
+    decision: "deny"
+    ttl_seconds: 30
+    actions: ["terminate_session", "alert_soc"]
+
+  - id: "rule-lateral-movement"
+    description: "Restrict sessions showing lateral movement behaviour"
+    priority: 3
+    conditions:
+      event_type_eq: "lateral_move_attempt"
+    decision: "restrict"
+    ttl_seconds: 60
+    actions: ["restrict_access"]
+
+  - id: "rule-high-risk-deny"
+    description: "Deny very high risk sessions regardless of posture"
+    priority: 4
+    conditions:
+      risk_score_gte: 0.80
+    decision: "deny"
+    ttl_seconds: 30
+    actions: ["terminate_session", "alert_soc"]
+
+  - id: "rule-high-risk-step-up"
+    description: "Step-up MFA for high risk sessions"
+    priority: 5
+    conditions:
+      risk_score_gte: 0.60
+    decision: "step_up"
+    ttl_seconds: 60
+    actions: ["require_mfa"]
+
+  - id: "rule-poor-posture-deny"
+    description: "Deny sessions from very low-posture devices"
+    priority: 6
+    conditions:
+      posture_score_lt: 0.20
+    decision: "deny"
+    ttl_seconds: 30
+    actions: ["terminate_session", "alert_soc"]
+
+  - id: "rule-medium-risk-step-up"
+    description: "Step-up MFA for medium risk sessions"
+    priority: 7
+    conditions:
+      risk_score_gte: 0.40
+      posture_score_lt: 0.60
+    decision: "step_up"
+    ttl_seconds: 60
+    actions: ["require_mfa"]
+
+  - id: "rule-medium-risk"
+    description: "Medium risk with acceptable posture → step up"
+    priority: 8
+    conditions:
+      risk_score_gte: 0.40
+    decision: "step_up"
+    ttl_seconds: 60
+    actions: ["require_mfa"]
+
+  - id: "rule-poor-posture-restrict"
+    description: "Restrict access for devices with poor posture"
+    priority: 9
+    conditions:
+      posture_score_lt: 0.40
+    decision: "restrict"
+    ttl_seconds: 120
+    actions: ["restrict_access"]
+
+  - id: "rule-default-allow"
+    description: "Default allow for low-risk compliant sessions"
+    priority: 100
+    conditions: {}
+    decision: "allow"
+    ttl_seconds: 300
+    actions: []

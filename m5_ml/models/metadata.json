@@ -1,0 +1,55 @@
+{
+  "model_version": "ensemble-v1.0",
+  "trained_at": "2026-11-06T19:17:57.486257+00:00",
+  "seed": 42,
+  "contamination": 0.05,
+  "train_samples": 34247,
+  "features": [
+    "bytes_sent_norm",
+    "session_duration_norm",
+    "distinct_resources",
+    "off_hours",
+    "new_device",
+    "geo_anomaly",
+    "lateral_move_velocity",
+    "privilege_claim_mismatch",
+    "temporal_drift_score",
+    "resource_access_deviation",
+    "failed_auth_count",
+    "is_login",
+    "is_access_request",
+    "is_file_access",
+    "is_lateral_move",
+    "is_auth_failure",
+    "is_privilege_esc",
+    "patch_level",
+    "vuln_count_norm",
+    "critical_vuln_count_flag",
+    "os_compliant",
+    "antivirus_active",
+    "posture_score",
+    "hour_sin",
+    "hour_cos"
+  ],
+  "n_features": 25,
+  "models": [
+    "isolation_forest",
+    "random_forest"
+  ],
+  "ensemble_weights": {
+    "isolation_forest": 0.6,
+    "random_forest": 0.4
+  },
+  "rf_eval": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "test_samples": 2063
+  },
+  "limitations": [
+    "Trained on synthetic data only; performance on real traffic unknown.",
+    "IsolationForest contamination=0.05 is a design assumption.",
+    "SHAP values are approximations; verify with domain experts."
+  ]
+}

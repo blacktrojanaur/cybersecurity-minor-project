@@ -1,0 +1,19 @@
+{
+  "seed": 42,
+  "normal_total": 42809,
+  "train_count": 34247,
+  "test_normal_count": 8562,
+  "attack_counts": {
+    "s1_credential_misuse": 200,
+    "s2_lateral_movement": 1152,
+    "s3_privilege_escalation": 200,
+    "s4_slow_and_low": 200
+  },
+  "generated_at": "2026-11-06T19:17:51.267299+00:00",
+  "limitations": [
+    "Synthetic profiles; does not represent real individuals.",
+    "Behavioural distributions simplified (Gaussian/uniform).",
+    "Attack patterns defined by researchers; real attackers may differ.",
+    "No external datasets used (OQ4 decision: self-contained)."
+  ]
+}

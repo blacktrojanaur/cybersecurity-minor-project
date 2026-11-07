@@ -5,84 +5,192 @@ networks:
     driver: bridge
     name: zt-net
 
+volumes:
+  ztsp-audit:
+    name: ztsp-audit
+  ztsp-models:
+    name: ztsp-models
+  ztsp-results:
+    name: ztsp-results
+
 services:
 
   m1_identity:
     build:
-      context: ./m1_identity
+      context: .
+      dockerfile: m1_identity/Dockerfile
     container_name: ztsp_m1_identity
     ports:
       - "8001:8001"
     networks:
       - zt-net
+    environment:
+      - SERVICE_TOKEN=${SERVICE_TOKEN:-dev-secret-change-in-prod}
+      - M2_URL=http://m2_policy:8002
+      - M3_URL=http://m3_response:8003
+      - M4_URL=http://m4_posture:8004
+      - M5_URL=http://m5_ml:8005
+    volumes:
+      - ztsp-audit:/data/audit
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\""]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
 
   m2_policy:
     build:
-      context: ./m2_policy
+      context: .
+      dockerfile: m2_policy/Dockerfile
     container_name: ztsp_m2_policy
     ports:
       - "8002:8002"
     networks:
       - zt-net
+    environment:
+      - SERVICE_TOKEN=${SERVICE_TOKEN:-dev-secret-change-in-prod}
+      - M1_URL=http://m1_identity:8001
+      - M3_URL=http://m3_response:8003
+    volumes:
+      - ztsp-audit:/data/audit
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8002/health')\""]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
 
   m3_response:
     build:
-      context: ./m3_response
+      context: .
+      dockerfile: m3_response/Dockerfile
     container_name: ztsp_m3_response
     ports:
       - "8003:8003"
     networks:
       - zt-net
+    environment:
+      - SERVICE_TOKEN=${SERVICE_TOKEN:-dev-secret-change-in-prod}
+      - M1_URL=http://m1_identity:8001
+      - M2_URL=http://m2_policy:8002
+      - M5_URL=http://m5_ml:8005
+      - WEBHOOK_URL=http://mock_webhook:8099/webhook
+    volumes:
+      - ztsp-audit:/data/audit
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\""]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
 
   m4_posture:
     build:
-      context: ./m4_posture
+      context: .
+      dockerfile: m4_posture/Dockerfile
     container_name: ztsp_m4_posture
     ports:
       - "8004:8004"
     networks:
       - zt-net
+    environment:
+      - SERVICE_TOKEN=${SERVICE_TOKEN:-dev-secret-change-in-prod}
+    volumes:
+      - ztsp-audit:/data/audit
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8004/health')\""]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
 
   m5_ml:
     build:
-      context: ./m5_ml
+      context: .
+      dockerfile: m5_ml/Dockerfile
     container_name: ztsp_m5_ml
     ports:
       - "8005:8005"
     networks:
       - zt-net
+    environment:
+      - SERVICE_TOKEN=${SERVICE_TOKEN:-dev-secret-change-in-prod}
+    volumes:
+      - ztsp-models:/app/m5_ml/models
+      - ztsp-audit:/data/audit
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8005/health')\""]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    container_name: ztsp_dashboard
+    ports:
+      - "8080:8080"
+    networks:
+      - zt-net
+    environment:
+      - SERVICE_TOKEN=${SERVICE_TOKEN:-dev-secret-change-in-prod}
+      - M1_URL=http://m1_identity:8001
+      - M2_URL=http://m2_policy:8002
+      - M3_URL=http://m3_response:8003
+      - RESOURCE_APP_URL=http://resource_app:8090
+    volumes:
+      - ztsp-results:/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  resource_app:
+    build:
+      context: .
+      dockerfile: testbed/resource_app/Dockerfile
+    container_name: ztsp_resource_app
+    ports:
+      - "8090:8090"
+    networks:
+      - zt-net
+    environment:
+      - SERVICE_TOKEN=${SERVICE_TOKEN:-dev-secret-change-in-prod}
+      - M2_URL=http://m2_policy:8002
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8090/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  mock_webhook:
+    build:
+      context: .
+      dockerfile: testbed/mock_webhook/Dockerfile
+    container_name: ztsp_mock_webhook
+    ports:
+      - "8099:8099"
+    networks:
+      - zt-net
+    volumes:
+      - ztsp-audit:/data/audit
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8099/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
       start_period: 10s

@@ -1,0 +1,31 @@
+# ZTSP Micro-Segmentation Map
+# Defines logical segments and which roles have access
+
+segments:
+  - id: "seg-hr"
+    name: "HR Segment"
+    path_prefix: "/hr"
+    allowed_roles: ["hr_manager", "sysadmin"]
+    network: "hr-net"
+    sensitivity: "high"
+
+  - id: "seg-finance"
+    name: "Finance Segment"
+    path_prefix: "/finance"
+    allowed_roles: ["analyst", "finance_lead", "sysadmin"]
+    network: "finance-net"
+    sensitivity: "high"
+
+  - id: "seg-code"
+    name: "Engineering Segment"
+    path_prefix: "/code"
+    allowed_roles: ["developer", "sysadmin"]
+    network: "code-net"
+    sensitivity: "medium"
+
+  - id: "seg-admin"
+    name: "Admin Segment"
+    path_prefix: "/admin"
+    allowed_roles: ["sysadmin"]
+    network: "admin-net"
+    sensitivity: "critical"
