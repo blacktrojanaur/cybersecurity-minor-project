@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZTSP – Zero Trust Security Platform Dashboard (Live Demo)</title>
+  <meta name="description" content="AI-Augmented Zero Trust Security Orchestration Platform – live session monitoring, risk scores, policy decisions, and attack scenario simulation.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <!-- Demo Mode Banner -->
+  <aside class="demo-banner">
+    <div class="demo-banner-left">
+      <span class="demo-banner-tag">Live Cloud Demo</span>
+      <span>Interactive Preview & Simulation for AI-Augmented Zero Trust Architecture.</span>
+    </div>
+    <div>
+      <a href="https://github.com/blacktrojanaur/cybersecurity-minor-project" target="_blank" rel="noopener noreferrer" class="demo-banner-link">
+        <svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor" style="display:inline-block;vertical-align:middle;margin-right:2px"><path d="M8 0c4.42 0 8 3.58 8 8a8.01 8.01 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
+        GitHub Repository
+      </a>
+    </div>
+  </aside>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="shield-icon">🛡️</div>
+      <div>
+        <h1 class="header-title">Zero Trust Security Platform</h1>
+        <p class="header-subtitle">AI-Augmented Continuous Access Evaluation · NIST SP 800-207</p>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text" class="status-text">Connecting…</span>
+      <span class="timestamp" id="last-update">—</span>
+    </div>
+  </header>
+
+  <!-- Scenario Controls -->
+  <section class="scenario-bar">
+    <span class="scenario-label">🎮 Trigger Attack Scenarios:</span>
+    <button class="btn btn-attack" id="btn-s1" onclick="runScenario('s1')">S1 Credential Misuse</button>
+    <button class="btn btn-attack" id="btn-s2" onclick="runScenario('s2')">S2 Lateral Movement</button>
+    <button class="btn btn-attack" id="btn-s3" onclick="runScenario('s3')">S3 Privilege Escalation</button>
+    <button class="btn btn-attack" id="btn-s4" onclick="runScenario('s4')">S4 Slow-and-Low</button>
+    <div class="scenario-feedback" id="scenario-feedback"></div>
+  </section>
+
+  <!-- Metrics Row -->
+  <section class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-label">Active Sessions</div>
+      <div class="metric-value" id="metric-sessions">—</div>
+    </div>
+    <div class="metric-card metric-card--warn">
+      <div class="metric-label">High Risk (&gt;0.6)</div>
+      <div class="metric-value" id="metric-high-risk">—</div>
+    </div>
+    <div class="metric-card metric-card--danger">
+      <div class="metric-label">Denied</div>
+      <div class="metric-value" id="metric-denied">—</div>
+    </div>
+    <div class="metric-card metric-card--success">
+      <div class="metric-label">Allowed</div>
+      <div class="metric-value" id="metric-allowed">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Decisions</div>
+      <div class="metric-value" id="metric-decisions">—</div>
+    </div>
+  </section>
+
+  <!-- Main Grid -->
+  <main class="main-grid">
+    <!-- Live Sessions Panel -->
+    <section class="panel panel--sessions">
+      <div class="panel-header">
+        <h2 class="panel-title">📡 Live Sessions</h2>
+        <span class="badge" id="session-count">0</span>
+      </div>
+      <div class="table-container">
+        <table class="data-table" id="sessions-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Device</th>
+              <th>Risk</th>
+              <th>Posture</th>
+              <th>Decision</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="sessions-body">
+            <tr><td colspan="6" class="empty-row">Waiting for sessions…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Decision Timeline -->
+    <section class="panel panel--timeline">
+      <div class="panel-header">
+        <h2 class="panel-title">📋 Decision Timeline</h2>
+        <span class="badge" id="decision-count">0</span>
+      </div>
+      <div class="timeline" id="decision-timeline">
+        <div class="empty-row">No decisions yet…</div>
+      </div>
+    </section>
+
+    <!-- ZT vs RBAC Comparison -->
+    <section class="panel panel--compare">
+      <div class="panel-header">
+        <h2 class="panel-title">⚡ ZT vs Static RBAC</h2>
+        <span class="badge badge--info">Live</span>
+      </div>
+      <div class="compare-grid">
+        <div class="compare-col">
+          <div class="compare-header compare-header--zt">Zero Trust Platform</div>
+          <div class="compare-stat">
+            <span class="compare-label">Detections</span>
+            <span class="compare-value" id="zt-detections">0</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-label">Blocked</span>
+            <span class="compare-value" id="zt-blocked">0</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-label">Step-up MFA</span>
+            <span class="compare-value" id="zt-stepup">0</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-label">Avg Response</span>
+            <span class="compare-value" id="zt-mttr">< 30s</span>
+          </div>
+        </div>
+        <div class="compare-col">
+          <div class="compare-header compare-header--rbac">Static RBAC Baseline</div>
+          <div class="compare-stat">
+            <span class="compare-label">Detections</span>
+            <span class="compare-value compare-value--weak">0</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-label">Blocked</span>
+            <span class="compare-value compare-value--weak">0</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-label">Step-up MFA</span>
+            <span class="compare-value compare-value--weak">N/A</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-label">Response</span>
+            <span class="compare-value compare-value--weak">Manual</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Response Actions -->
+    <section class="panel panel--actions">
+      <div class="panel-header">
+        <h2 class="panel-title">🤖 Response Actions</h2>
+        <span class="badge" id="action-count">0</span>
+      </div>
+      <div class="action-feed" id="action-feed">
+        <div class="empty-row">No actions yet…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>AI-Augmented Zero Trust Security Orchestration Platform · B.Tech Final Year Minor Project</span>
+    <span>Microservices: M1 Identity · M2 Policy · M3 SOAR · M4 Posture · M5 ML</span>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
+
