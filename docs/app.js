@@ -449,8 +449,13 @@ function simulateScenario(name, label, btn, fb) {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  // If hosted on GitHub Pages, start directly in demo simulation mode
-  if (window.location.hostname.endsWith('github.io') || window.location.protocol === 'file:') {
+  // If hosted on Vercel, GitHub Pages, or static file, start directly in demo simulation mode
+  if (
+    window.location.hostname.endsWith('github.io') ||
+    window.location.hostname.endsWith('vercel.app') ||
+    window.location.hostname.includes('vercel') ||
+    window.location.protocol === 'file:'
+  ) {
     activateDemoMode();
   } else {
     connectSSE();

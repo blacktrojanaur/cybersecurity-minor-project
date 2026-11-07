@@ -30,16 +30,14 @@ if %ERRORLEVEL% EQU 0 (
   echo   SUCCESSFULLY PUSHED TO GITHUB!
   echo =================================================================
   echo.
-  echo To view your hosted GitHub Pages site:
-  echo   1. Go to your repo on GitHub:
-  echo      https://github.com/blacktrojanaur/cybersecurity-minor-project/settings/pages
-  echo   2. Under "Build and deployment" -^> "Source":
-  echo      Select "Deploy from a branch"
-  echo   3. Under "Branch":
-  echo      Select "main" and folder "/docs", then click Save.
+  echo To host on Vercel:
+  echo   1. Visit https://vercel.com/new and log in with GitHub
+  echo   2. Import "cybersecurity-minor-project"
+  echo   3. Click "Deploy" (vercel.json automatically configures everything!)
   echo.
-  echo   Your live demo will be published at:
-  echo   https://blacktrojanaur.github.io/cybersecurity-minor-project/
+  echo To host on GitHub Pages:
+  echo   1. Open https://github.com/blacktrojanaur/cybersecurity-minor-project/settings/pages
+  echo   2. Set Source: "Deploy from a branch", Branch: "main", Folder: "/docs", click Save.
   echo =================================================================
 ) else (
   echo [!] Push encountered an issue. Please review the output above.

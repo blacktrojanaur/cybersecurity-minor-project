@@ -1,7 +1,8 @@
 # AI-Augmented Zero Trust Security Orchestration Platform (ZTSP)
 
 > **B.Tech Final Year Research Prototype** | Complete Working Implementation  
-> 🌐 **Live Interactive GitHub Pages Demo:** [https://blacktrojanaur.github.io/cybersecurity-minor-project/](https://blacktrojanaur.github.io/cybersecurity-minor-project/)
+> 🌐 **Interactive Demo (Vercel / GitHub Pages):** [https://cybersecurity-minor-project.vercel.app](https://cybersecurity-minor-project.vercel.app) *(or [GitHub Pages Mirror](https://blacktrojanaur.github.io/cybersecurity-minor-project/))*  
+> [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fblacktrojanaur%2Fcybersecurity-minor-project)
 
 A microservice-based prototype demonstrating continuous Zero Trust access evaluation augmented by an ML risk-scoring engine. In accordance with NIST SP 800-207, access is never implicitly granted and is continuously re-evaluated:
 
