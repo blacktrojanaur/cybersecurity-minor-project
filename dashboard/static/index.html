@@ -3,166 +3,462 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZTSP – Zero Trust Security Platform Dashboard</title>
-  <meta name="description" content="AI-Augmented Zero Trust Security Orchestration Platform – live session monitoring, risk scores, policy decisions, and attack scenario simulation.">
+  <title>ZTSP – Zero Trust Security Orchestration Platform</title>
+  <meta name="description" content="AI-Augmented Zero Trust Security Orchestration Platform — Live continuous evaluation, NIST SP 800-207 policy engine, and ML risk scoring.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <!-- Header -->
-  <header class="header">
+
+  <!-- Cloud Demo Banner -->
+  <aside class="demo-banner">
+    <div class="demo-banner-content">
+      <span class="demo-banner-tag">Enterprise SOC View</span>
+      <span>Continuous Zero Trust Access Evaluation · NIST SP 800-207 Closed-Loop Prototype</span>
+    </div>
+    <div>
+      <a href="https://github.com/blacktrojanaur/cybersecurity-minor-project" target="_blank" rel="noopener noreferrer" class="demo-banner-link">
+        <svg class="icon-svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.01 8.01 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
+        GitHub Repository
+      </a>
+    </div>
+  </aside>
+
+  <!-- Top Sticky Header -->
+  <header class="header-bar">
     <div class="header-brand">
-      <div class="shield-icon">🛡️</div>
-      <div>
-        <h1 class="header-title">Zero Trust Security Platform</h1>
-        <p class="header-subtitle">AI-Augmented Continuous Access Evaluation</p>
+      <div class="header-logo-icon">
+        <svg class="icon-svg" style="width:20px;height:20px;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="header-title-wrap">
+        <h1>Zero Trust Security Platform <span class="badge-version">v2.4-SOC</span></h1>
+        <p>AI-Augmented Continuous Access Evaluation & Autonomous Incident Response</p>
       </div>
     </div>
-    <div class="header-status">
-      <div class="status-dot" id="status-dot"></div>
-      <span id="status-text" class="status-text">Connecting…</span>
-      <span class="timestamp" id="last-update">—</span>
+
+    <!-- Cluster Microservices Health Chips -->
+    <div class="cluster-health" aria-label="Microservice Status">
+      <span class="health-label">Cluster</span>
+      <span class="health-chip" title="M1 Identity & Telemetry Service (Port 8001)"><span class="health-dot"></span>M1 Identity</span>
+      <span class="health-chip" title="M2 Policy Engine & Audit (Port 8002)"><span class="health-dot"></span>M2 Policy</span>
+      <span class="health-chip" title="M3 SOAR Response Service (Port 8003)"><span class="health-dot"></span>M3 SOAR</span>
+      <span class="health-chip" title="M4 Vulnerability & Posture (Port 8004)"><span class="health-dot"></span>M4 Posture</span>
+      <span class="health-chip" title="M5 ML Risk Scoring Engine (Port 8005)"><span class="health-dot"></span>M5 ML</span>
+    </div>
+
+    <!-- Controls & Status -->
+    <div class="header-actions">
+      <button class="btn-control" id="btn-presentation" onclick="togglePresentationMode()" title="Toggle full-width presentation mode for demos and projectors">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        Presentation View
+      </button>
+
+      <div class="status-pill">
+        <span class="status-pulse" id="status-pulse-dot"></span>
+        <span id="status-label-text">Connecting...</span>
+      </div>
+
+      <span class="timestamp-live" id="last-update">—</span>
     </div>
   </header>
 
-  <!-- Scenario Controls -->
-  <section class="scenario-bar">
-    <span class="scenario-label">🎮 Attack Scenarios:</span>
-    <button class="btn btn-attack" id="btn-s1" onclick="runScenario('s1')">S1 Credential Misuse</button>
-    <button class="btn btn-attack" id="btn-s2" onclick="runScenario('s2')">S2 Lateral Movement</button>
-    <button class="btn btn-attack" id="btn-s3" onclick="runScenario('s3')">S3 Privilege Escalation</button>
-    <button class="btn btn-attack" id="btn-s4" onclick="runScenario('s4')">S4 Slow-and-Low</button>
-    <div class="scenario-feedback" id="scenario-feedback"></div>
-  </section>
-
-  <!-- Metrics Row -->
-  <section class="metrics-row">
-    <div class="metric-card">
-      <div class="metric-label">Active Sessions</div>
-      <div class="metric-value" id="metric-sessions">—</div>
-    </div>
-    <div class="metric-card metric-card--warn">
-      <div class="metric-label">High Risk (&gt;0.6)</div>
-      <div class="metric-value" id="metric-high-risk">—</div>
-    </div>
-    <div class="metric-card metric-card--danger">
-      <div class="metric-label">Denied</div>
-      <div class="metric-value" id="metric-denied">—</div>
-    </div>
-    <div class="metric-card metric-card--success">
-      <div class="metric-label">Allowed</div>
-      <div class="metric-value" id="metric-allowed">—</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Total Decisions</div>
-      <div class="metric-value" id="metric-decisions">—</div>
-    </div>
-  </section>
-
-  <!-- Main Grid -->
-  <main class="main-grid">
-    <!-- Live Sessions Panel -->
-    <section class="panel panel--sessions">
-      <div class="panel-header">
-        <h2 class="panel-title">📡 Live Sessions</h2>
-        <span class="badge" id="session-count">0</span>
-      </div>
-      <div class="table-container">
-        <table class="data-table" id="sessions-table">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Device</th>
-              <th>Risk</th>
-              <th>Posture</th>
-              <th>Decision</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="sessions-body">
-            <tr><td colspan="6" class="empty-row">Waiting for sessions…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Decision Timeline -->
-    <section class="panel panel--timeline">
-      <div class="panel-header">
-        <h2 class="panel-title">📋 Decision Timeline</h2>
-        <span class="badge" id="decision-count">0</span>
-      </div>
-      <div class="timeline" id="decision-timeline">
-        <div class="empty-row">No decisions yet…</div>
-      </div>
-    </section>
-
-    <!-- ZT vs RBAC Comparison -->
-    <section class="panel panel--compare">
-      <div class="panel-header">
-        <h2 class="panel-title">⚡ ZT vs Static RBAC</h2>
-        <span class="badge badge--info">Live</span>
-      </div>
-      <div class="compare-grid">
-        <div class="compare-col">
-          <div class="compare-header compare-header--zt">Zero Trust Platform</div>
-          <div class="compare-stat">
-            <span class="compare-label">Detections</span>
-            <span class="compare-value" id="zt-detections">0</span>
-          </div>
-          <div class="compare-stat">
-            <span class="compare-label">Blocked</span>
-            <span class="compare-value" id="zt-blocked">0</span>
-          </div>
-          <div class="compare-stat">
-            <span class="compare-label">Step-up MFA</span>
-            <span class="compare-value" id="zt-stepup">0</span>
-          </div>
-          <div class="compare-stat">
-            <span class="compare-label">Avg Response</span>
-            <span class="compare-value" id="zt-mttr">—</span>
-          </div>
-        </div>
-        <div class="compare-col">
-          <div class="compare-header compare-header--rbac">Static RBAC Baseline</div>
-          <div class="compare-stat">
-            <span class="compare-label">Detections</span>
-            <span class="compare-value compare-value--weak">0</span>
-          </div>
-          <div class="compare-stat">
-            <span class="compare-label">Blocked</span>
-            <span class="compare-value compare-value--weak">0</span>
-          </div>
-          <div class="compare-stat">
-            <span class="compare-label">Step-up MFA</span>
-            <span class="compare-value compare-value--weak">N/A</span>
-          </div>
-          <div class="compare-stat">
-            <span class="compare-label">Response</span>
-            <span class="compare-value compare-value--weak">Manual</span>
-          </div>
+  <!-- Closed-Loop Pipeline Strip -->
+  <section class="pipeline-strip" aria-label="Architecture Closed Loop">
+    <div class="pipeline-flow">
+      <div class="pipeline-node" id="pnode-0">
+        <span class="node-num">1</span>
+        <div class="node-meta">
+          <span class="node-title">Telemetry Ingestion</span>
+          <span class="node-sub">M1 OIDC & Network</span>
         </div>
       </div>
-    </section>
+      <span class="pipeline-arrow" id="parrow-0">→</span>
 
-    <!-- Response Actions -->
-    <section class="panel panel--actions">
-      <div class="panel-header">
-        <h2 class="panel-title">🤖 Response Actions</h2>
-        <span class="badge" id="action-count">0</span>
+      <div class="pipeline-node" id="pnode-1">
+        <span class="node-num">2</span>
+        <div class="node-meta">
+          <span class="node-title">ML Risk & Posture</span>
+          <span class="node-sub">M5 Isolation / M4 EDR</span>
+        </div>
       </div>
-      <div class="action-feed" id="action-feed">
-        <div class="empty-row">No actions yet…</div>
+      <span class="pipeline-arrow" id="parrow-1">→</span>
+
+      <div class="pipeline-node" id="pnode-2">
+        <span class="node-num">3</span>
+        <div class="node-meta">
+          <span class="node-title">PDP Decision</span>
+          <span class="node-sub">M2 Policy Engine</span>
+        </div>
       </div>
-    </section>
+      <span class="pipeline-arrow" id="parrow-2">→</span>
+
+      <div class="pipeline-node" id="pnode-3">
+        <span class="node-num">4</span>
+        <div class="node-meta">
+          <span class="node-title">PEP Micro-segment</span>
+          <span class="node-sub">Resource App / Gateway</span>
+        </div>
+      </div>
+      <span class="pipeline-arrow" id="parrow-3">→</span>
+
+      <div class="pipeline-node" id="pnode-4">
+        <span class="node-num">5</span>
+        <div class="node-meta">
+          <span class="node-title">SOAR Response</span>
+          <span class="node-sub">M3 Revocation / Webhook</span>
+        </div>
+      </div>
+      <span class="pipeline-arrow" id="parrow-4">→</span>
+
+      <div class="pipeline-node" id="pnode-5">
+        <span class="node-num">6</span>
+        <div class="node-meta">
+          <span class="node-title">Continuous Feedback</span>
+          <span class="node-sub">Audit Ledger & Drift</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario Launcher Section -->
+  <section class="section-scenarios">
+    <div class="section-header-row">
+      <div class="section-title-wrap">
+        <svg class="icon-svg" style="color:var(--brand-blue);" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></svg>
+        <span class="section-title">NIST SP 800-207 Threat Verification Scenarios</span>
+      </div>
+      <button class="btn-reset" onclick="resetDemoScenarios()" title="Reset sessions to baseline">
+        Reset to Baseline
+      </button>
+    </div>
+
+    <div class="scenario-grid">
+      <!-- S1 Card -->
+      <div class="scenario-card" id="card-scenario-s1">
+        <div>
+          <div class="scenario-top">
+            <span class="scenario-badge-id">SCENARIO S1</span>
+            <span class="scenario-sev scenario-sev--high">HIGH SEVERITY</span>
+          </div>
+          <div class="scenario-name">Credential Misuse</div>
+          <div class="scenario-desc">Stolen credentials executed from unmanaged foreign IP. Tests unsupervised ML anomaly detection and perimeter containment.</div>
+        </div>
+        <div class="scenario-action-bar">
+          <span class="scenario-target">Target: alice @ 203.0.113.42</span>
+          <button class="btn-run-scenario" id="btn-scenario-s1" onclick="triggerAttackScenario('s1')">
+            Trigger Attack
+          </button>
+        </div>
+      </div>
+
+      <!-- S2 Card -->
+      <div class="scenario-card" id="card-scenario-s2">
+        <div>
+          <div class="scenario-top">
+            <span class="scenario-badge-id">SCENARIO S2</span>
+            <span class="scenario-sev scenario-sev--med">MEDIUM SEVERITY</span>
+          </div>
+          <div class="scenario-name">Lateral Movement</div>
+          <div class="scenario-desc">Developer session hops across segments to restricted finance service. Tests micro-segmentation PEP enforcement.</div>
+        </div>
+        <div class="scenario-action-bar">
+          <span class="scenario-target">Target: frank (/code -> /finance)</span>
+          <button class="btn-run-scenario" id="btn-scenario-s2" onclick="triggerAttackScenario('s2')">
+            Trigger Attack
+          </button>
+        </div>
+      </div>
+
+      <!-- S3 Card -->
+      <div class="scenario-card" id="card-scenario-s3">
+        <div>
+          <div class="scenario-top">
+            <span class="scenario-badge-id">SCENARIO S3</span>
+            <span class="scenario-sev scenario-sev--crit">CRITICAL SEVERITY</span>
+          </div>
+          <div class="scenario-name">Privilege Escalation</div>
+          <div class="scenario-desc">Read-only viewer requests administrative key management API. Tests role drift detection and immediate session revocation.</div>
+        </div>
+        <div class="scenario-action-bar">
+          <span class="scenario-target">Target: eve (/admin/keys)</span>
+          <button class="btn-run-scenario" id="btn-scenario-s3" onclick="triggerAttackScenario('s3')">
+            Trigger Attack
+          </button>
+        </div>
+      </div>
+
+      <!-- S4 Card -->
+      <div class="scenario-card" id="card-scenario-s4">
+        <div>
+          <div class="scenario-top">
+            <span class="scenario-badge-id">SCENARIO S4</span>
+            <span class="scenario-sev scenario-sev--low">POLICY DRIFT</span>
+          </div>
+          <div class="scenario-name">Slow-and-Low Drift</div>
+          <div class="scenario-desc">Compliant host disables firewall with missing patches. Tests continuous posture monitoring and Step-Up MFA challenge.</div>
+        </div>
+        <div class="scenario-action-bar">
+          <span class="scenario-target">Target: alice (EDR posture 0.41)</span>
+          <button class="btn-run-scenario" id="btn-scenario-s4" onclick="triggerAttackScenario('s4')">
+            Trigger Attack
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stepper Status Bar -->
+    <div class="killchain-stepper" id="killchain-stepper">
+      <div class="stepper-left">
+        <span class="stepper-spinner" id="stepper-spinner"></span>
+        <span class="stepper-msg" id="stepper-msg">System baseline verified. Select an attack scenario above to run the continuous verification benchmark.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI Row -->
+  <section class="section-kpi">
+    <div class="kpi-grid">
+      <!-- Active Sessions -->
+      <div class="kpi-card" id="card-sessions">
+        <div class="kpi-top">
+          <span class="kpi-title">Active Sessions</span>
+          <div class="kpi-icon-wrap">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="metric-sessions">4</span>
+        </div>
+        <div id="spark-sessions"></div>
+      </div>
+
+      <!-- High Risk (>0.6) -->
+      <div class="kpi-card" id="card-high-risk">
+        <div class="kpi-top">
+          <span class="kpi-title">High Risk (&gt;0.6)</span>
+          <div class="kpi-icon-wrap">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="metric-high-risk">0</span>
+        </div>
+        <div id="spark-high-risk"></div>
+      </div>
+
+      <!-- Denied / Revoked -->
+      <div class="kpi-card" id="card-denied">
+        <div class="kpi-top">
+          <span class="kpi-title">Autonomous Denials</span>
+          <div class="kpi-icon-wrap">
+            <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="metric-denied">0</span>
+        </div>
+        <div id="spark-denied"></div>
+      </div>
+
+      <!-- Verified Compliant -->
+      <div class="kpi-card" id="card-allowed">
+        <div class="kpi-top">
+          <span class="kpi-title">Verified Compliant</span>
+          <div class="kpi-icon-wrap">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="metric-allowed">4</span>
+        </div>
+        <div id="spark-allowed"></div>
+      </div>
+
+      <!-- Dynamic MTTR -->
+      <div class="kpi-card" id="card-mttr">
+        <div class="kpi-top">
+          <span class="kpi-title">Computed MTTR</span>
+          <div class="kpi-icon-wrap">
+            <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-number" id="metric-mttr">—</span>
+        </div>
+        <p style="font-size:10px;color:var(--text-muted);margin-top:6px;">Autonomous PDP to SOAR delta</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main SOC Layout Grid -->
+  <main class="main-soc-layout">
+    <!-- Left Column: Live Sessions Table + Detail Filters -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <section class="soc-panel">
+        <div class="soc-panel-header">
+          <div class="soc-panel-title">
+            <svg class="icon-svg" style="color:var(--brand-cyan);" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Live Continuous Access Sessions
+          </div>
+          <span class="soc-count-pill" id="session-count-badge">4 active</span>
+        </div>
+
+        <!-- Table Toolbar: Search + Decision Filters -->
+        <div class="table-toolbar">
+          <div class="search-box-wrap">
+            <svg class="icon-svg search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="input-search" id="table-search-input" placeholder="Search user, device, IP..." aria-label="Search sessions">
+          </div>
+          <div class="filter-chips">
+            <button class="chip-filter active" data-filter="all">All</button>
+            <button class="chip-filter" data-filter="allow">Allow</button>
+            <button class="chip-filter" data-filter="step_up">Step-Up</button>
+            <button class="chip-filter" data-filter="restrict">Restrict</button>
+            <button class="chip-filter" data-filter="deny">Deny</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="soc-table" id="sessions-table">
+            <thead>
+              <tr>
+                <th data-sort="user_id">User</th>
+                <th data-sort="device_id">Device Identifier</th>
+                <th data-sort="ip_address">Network IP</th>
+                <th data-sort="risk_score">ML Risk</th>
+                <th data-sort="posture_score">Posture</th>
+                <th data-sort="decision">PDP Decision</th>
+                <th style="width:40px;"></th>
+              </tr>
+            </thead>
+            <tbody id="sessions-body">
+              <tr><td colspan="7" class="empty-row" style="text-align:center;padding:24px;color:var(--text-muted);">Ingesting live session telemetry...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Decision Timeline -->
+      <section class="soc-panel">
+        <div class="soc-panel-header">
+          <div class="soc-panel-title">
+            <svg class="icon-svg" style="color:var(--brand-blue);" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Real-Time Policy Audit & Evaluation Ledger
+          </div>
+          <span class="soc-count-pill" id="timeline-count-badge">0 events</span>
+        </div>
+        <div class="timeline-feed" id="timeline-feed">
+          <div class="empty-row" style="text-align:center;padding:24px;color:var(--text-muted);">Waiting for audit events...</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Right Column: ZT vs RBAC Comparison + Automated SOAR Actions -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <!-- Zero Trust vs RBAC Scorecard -->
+      <section class="soc-panel">
+        <div class="soc-panel-header">
+          <div class="soc-panel-title">
+            <svg class="icon-svg" style="color:var(--zt-allow);" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            ZT vs Static RBAC Comparative Evaluation
+          </div>
+          <span class="badge-version">NIST Benchmark</span>
+        </div>
+        <div class="compare-container" id="compare-display-area">
+          <!-- Populated dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- SOAR Automated Playbook Actions -->
+      <section class="soc-panel" style="flex:1;">
+        <div class="soc-panel-header">
+          <div class="soc-panel-title">
+            <svg class="icon-svg" style="color:var(--brand-purple);" viewBox="0 0 24 24"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+            SOAR Autonomous Playbook Executions
+          </div>
+          <span class="soc-count-pill" id="actions-count-badge">0 runs</span>
+        </div>
+        <div class="actions-feed" id="actions-feed">
+          <div class="empty-row" style="text-align:center;padding:24px;color:var(--text-muted);">Waiting for SOAR trigger...</div>
+        </div>
+      </section>
+    </div>
   </main>
 
-  <footer class="footer">
-    <span>AI-Augmented Zero Trust Security Orchestration Platform · B.Tech Research Prototype</span>
-    <span>All metrics from live runs · No fabricated data</span>
+  <!-- Inspection Drawer (Deep-Dive Slide-Out) -->
+  <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeInspectDrawer()"></div>
+  <aside class="inspect-drawer" id="inspect-drawer" aria-label="Session Telemetry Deep-Dive">
+    <div class="drawer-header">
+      <div class="drawer-header-title">
+        <svg class="icon-svg" style="color:var(--brand-cyan);" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Telemetry Deep-Dive</span>
+      </div>
+      <button class="btn-close-drawer" onclick="closeInspectDrawer()" aria-label="Close Drawer">
+        <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Session Overview -->
+      <div class="drawer-section">
+        <div class="drawer-section-title">Session Identity</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-primary);" id="drawer-user-id">—</div>
+            <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);" id="drawer-device-id">—</div>
+          </div>
+          <div id="drawer-decision-pill" class="pill-decision pill-decision--allow">ALLOW</div>
+        </div>
+
+        <div class="session-id-full-row">
+          <span class="session-id-full" id="drawer-session-id">—</span>
+          <button class="btn-copy" id="btn-copy-sess" onclick="copyFullSessionId()" title="Copy Full UUID">
+            <svg class="icon-svg" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- Active PDP Policy -->
+      <div class="drawer-section">
+        <div class="drawer-section-title">Active Policy Rule</div>
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--brand-blue);" id="drawer-policy-rule">
+          rule-compliant-workstation-v2.1
+        </div>
+      </div>
+
+      <!-- SHAP Explainability -->
+      <div class="drawer-section">
+        <div class="drawer-section-title">
+          <span>ML Risk Factors (SHAP Drivers)</span>
+          <span style="font-size:10px;color:var(--text-muted);">M5 Isolation Forest</span>
+        </div>
+        <div id="drawer-shap-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Posture Telemetry Controls -->
+      <div class="drawer-section">
+        <div class="drawer-section-title">
+          <span>M4 Posture Controls</span>
+          <span style="font-size:10px;color:var(--text-muted);">Host Verification</span>
+        </div>
+        <div id="drawer-posture-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <span>Zero Trust Security Orchestration Platform · B.Tech Final Year Engineering Prototype</span>
+    <span>Microservices: M1 Identity · M2 Policy · M3 SOAR · M4 Posture · M5 ML · Resource App</span>
   </footer>
 
-  <script src="/static/app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>

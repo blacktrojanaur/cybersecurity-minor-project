@@ -14,7 +14,7 @@ git add .
 echo.
 
 echo [*] Committing changes...
-git commit -m "feat: complete working Zero Trust platform with interactive GitHub Pages live demo"
+git commit -m "feat: enterprise SOC dashboard redesign with dual-mode live simulation"
 echo.
 
 echo [*] Ensuring main branch...
